@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+
+    <!-- PrimeVue -->
+    <link
+      href="https://unpkg.com/primevue@^3/resources/themes/saga-blue/theme.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://unpkg.com/primevue@^3/resources/primevue.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/primeflex@^3/primeflex.css"
+    />
+    <link
+      href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css"
+      rel="stylesheet"
+    />
+
+    <link href="https://unpkg.com/primeicons/primeicons.css" rel="stylesheet" />
+
+    <!-- Dependencies -->
+    <script src="https://unpkg.com/vue@next"></script>
+    <script src="https://unpkg.com/primevue@^3/core/core.min.js"></script>
+
+    <!-- Demo -->
+    <script src="https://unpkg.com/primevue@^3/tabmenu/tabmenu.min.js"></script>
+    <!-- <link href="./style.css" rel="stylesheet" /> -->
+  </head>
+  <body>
+    <div id="view-wc"></div>
+
+    <script type="module">
+      const { createApp, ref } = Vue;
+
+      const App = {
+        setup() {
+          const active = ref(3);
+          const items = ref([
+            {
+              label: "Home",
+              icon: "pi pi-fw pi-home",
+            },
+            {
+              label: "Calendar",
+              icon: "pi pi-fw pi-calendar",
+            },
+            {
+              label: "Edit",
+              icon: "pi pi-fw pi-pencil",
+            },
+            {
+              label: "Documentation",
+              icon: "pi pi-fw pi-file",
+            },
+            {
+              label: "Settings",
+              icon: "pi pi-fw pi-cog",
+            },
+          ]);
+          return { items, active };
+        },
+        components: {
+          "p-button": primevue.button,
+          "p-tabmenu": primevue.tabmenu,
+        },
+        template: `<div class="mt-5">
+        <h5>Basic</h5>
+        <p-button label="Submit"></p-button>
+        <p-button label="Disabled" disabled="disabled"></p-button>
+        <p-button label="Link" class="p-button-link"></p-button>
+      </div>`,
+      };
+
+      createApp(App).use(primevue.config.default).mount("#view-wc");
+    </script>
+  </body>
+</html>

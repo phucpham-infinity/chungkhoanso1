@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+
+    <!-- PrimeVue -->
+    <link
+      href="https://unpkg.com/primevue@^3/resources/themes/saga-blue/theme.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://unpkg.com/primevue@^3/resources/primevue.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://unpkg.com/primeflex@^3/primeflex.min.css"
+      rel="stylesheet"
+    />
+    <link href="https://unpkg.com/primeicons/primeicons.css" rel="stylesheet" />
+
+    <!-- Dependencies -->
+    <script src="https://unpkg.com/vue@next"></script>
+    <script src="https://unpkg.com/primevue@^3/core/core.min.js"></script>
+
+    <!-- Demo -->
+    <script src="https://unpkg.com/primevue@^3/datatable/datatable.min.js"></script>
+    <script src="https://unpkg.com/primevue@^3/column/column.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
+
+    <script src="./ProductService.js"></script>
+    <link href="./index.css" rel="stylesheet" />
+  </head>
+  <body>
+    <div id="app">
+      <p-datatable
+        :value="products"
+        @row-expand="onRowExpand"
+        @row-collapse="onRowCollapse"
+        v-model:expanded-rows="expandedRows"
+        dataKey="ID"
+        responsive-layout="scroll"
+        :paginator="true"
+        :rows="10"
+        paginator-template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
+        :rows-per-page-options="[10,20,50]"
+        current-page-report-template="Showing {first} to {last} of {totalRecords}"
+      >
+        <template #header>
+          <div class="flex justify-content-between">
+            <p-button
+              type="button"
+              icon="pi pi-filter-slash"
+              label="Clear"
+              class="p-button-outlined"
+            ></p-button>
+            <span class="p-input-icon-left">
+              <i class="pi pi-search"></i>
+              <p-inputtext placeholder="Keyword Search"></p-inputtext>
+            </span>
+          </div>
+        </template>
+        <p-column :expander="true" headerStyle="width: 3rem"></p-column>
+        <p-column
+          v-for="col of columns"
+          :field="col.field"
+          :header="col.header"
+          :key="col.field"
+        >
+          <template v-if="col.template" #body="slotProps">
+            <div v-html="col.template(slotProps)"></div>
+          </template>
+        </p-column>
+        <template #expansion="slotProps">
+          <div>
+            <h5>Orders for {{slotProps.data.ID}}</h5>
+          </div>
+        </template>
+        <template #paginatorstart>
+          <p-button
+            type="button"
+            icon="pi pi-refresh"
+            class="p-button-text"
+          ></p-button>
+        </template>
+        <template #paginatorend>
+          <p-button
+            type="button"
+            icon="pi pi-cloud"
+            class="p-button-text"
+          ></p-button>
+        </template>
+      </p-datatable>
+    </div>
+
+    <script type="module">
+      const { createApp, ref, onMounted } = Vue;
+
+      const App = {
+        setup() {
+          const expandedRows = ref([]);
+
+          const columns = ref([
+            { field: "ID", header: "ID" },
+            { field: "user_email", header: "Email" },
+            { field: "display_name", header: "Display Name" },
+            { field: "user_nicename", header: "Nicename" },
+            { field: "user_url", header: "URL" },
+            {
+              field: "user_registered",
+              header: "Registered",
+              template: (slotProps) => {
+                return `<span class='text-green-600'>${dayjs(
+                  slotProps.data.user_registered
+                ).format("DD/MM/YYYY")}</span>`;
+              },
+            },
+          ]);
+          const products = ref();
+
+          const onRowExpand = (event) => {
+            console.log("onRowExpand", event);
+          };
+
+          const onRowCollapse = (event) => {
+            console.log("onRowCollapse", event);
+          };
+
+          onMounted(() => {
+            fetch("https://api.chungkhoanso1.com/users")
+              .then((res) => res.json())
+              .then((d) => {
+                products.value = d.data?.records;
+              });
+          });
+
+          return {
+            columns,
+            products,
+            onRowExpand,
+            onRowCollapse,
+            expandedRows,
+          };
+        },
+        components: {
+          "p-datatable": primevue.datatable,
+          "p-column": primevue.column,
+          "p-inputtext": primevue.inputtext,
+          "p-button": primevue.button,
+        },
+      };
+
+      createApp(App).use(primevue.config.default).mount("#app");
+    </script>
+  </body>
+</html>

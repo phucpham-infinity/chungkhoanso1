@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <!-- PrimeVue -->
+    <link
+      href="https://unpkg.com/primevue@^3/resources/themes/saga-blue/theme.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://unpkg.com/primevue@^3/resources/primevue.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://unpkg.com/primeflex@^3/primeflex.min.css"
+      rel="stylesheet"
+    />
+    <link href="https://unpkg.com/primeicons/primeicons.css" rel="stylesheet" />
+
+    <!-- Dependencies -->
+    <script src="https://unpkg.com/vue@next"></script>
+    <script src="https://unpkg.com/primevue@^3/core/core.min.js"></script>
+    <script src="https://unpkg.com/quill/dist/quill.min.js"></script>
+
+    <!-- Primevue -->
+    <script src="https://unpkg.com/vue-router@4.0.0/dist/vue-router.global.js"></script>
+    <script src="https://unpkg.com/primevue@^3/menubar/menubar.min.js"></script>
+    <script src="https://unpkg.com/primevue@^3/datatable/datatable.min.js"></script>
+    <script src="https://unpkg.com/primevue@^3/column/column.min.js"></script>
+    <script src="https://unpkg.com/primevue@^3/dropdown/dropdown.min.js"></script>
+    <script src="https://unpkg.com/primevue@^3/multiselect/multiselect.min.js"></script>
+    <script src="https://unpkg.com/primevue@^3/calendar/calendar.min.js"></script>
+    <script src="https://unpkg.com/primevue@^3/slider/slider.min.js"></script>
+    <script src="https://unpkg.com/primevue@^3/progressbar/progressbar.min.js"></script>
+    <script src="https://unpkg.com/primevue@^3/confirmpopup/confirmpopup.min.js"></script>
+    <script src="https://unpkg.com/primevue@^3/confirmationservice/confirmationservice.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue-demi"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@vuelidate/core"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@vuelidate/validators"></script>
+    <script src="https://unpkg.com/primevue@^3/editor/editor.min.js"></script>
+  </head>
+
+  <body style="padding: 0; margin: 0">
+    <div class="p-3" id="app">
+      <p-menubar :model="items">
+        <template #start>
+          <img
+            alt="logo"
+            src="https://chungkhoanso1.com/wp-content/uploads/2023/03/Screen-Shot-2023-03-04-at-11.03.46.png"
+            height="40"
+            class="mr-2"
+          />
+        </template>
+        <template #end>
+          <p-inputtext placeholder="Search" type="text"></p-inputtext>
+        </template>
+      </p-menubar>
+      <div>
+        <router-view></router-view>
+      </div>
+    </div>
+
+    <script type="module">
+      const App = {
+        setup() {
+          const items = Vue.ref([
+            {
+              label: "Khoá học",
+              icon: "pi pi-fw pi-book",
+              to: "/courses",
+            },
+            {
+              label: "Học viên",
+              icon: "pi pi-fw pi-users",
+              to: "/users",
+            },
+          ]);
+
+          return { items };
+        },
+        components: {
+          "p-menubar": primevue.menubar,
+          "p-inputtext": primevue.inputtext,
+        },
+      };
+
+      const lessonsTable = {
+        props: ["course_id"],
+        components: {
+          "p-datatable": primevue.datatable,
+          "p-column": primevue.column,
+          "p-button": primevue.button,
+          "p-inputtext": primevue.inputtext,
+          "p-confirmpopup": primevue.confirmpopup,
+          "p-dialog": primevue.dialog,
+          "p-editor": primevue.editor,
+          "p-inputnumber": primevue.inputnumber,
+          "p-dropdown": primevue.dropdown,
+        },
+        setup(props) {
+          const displayAddModal = Vue.ref(false);
+
+          const closeModal = () => {
+            displayAddModal.value = false;
+          };
+          const openModal = () => {
+            displayAddModal.value = true;
+          };
+
+          const submitted = Vue.ref(false);
+
+          const lessons = Vue.ref([]);
+          const pagination = Vue.ref({});
+          const loading = Vue.ref(false);
+
+          const loadNewLesson = (id) => {
+            loading.value = true;
+            fetch(
+              `https://api.chungkhoanso1.com/table?table=lessons&limit=100&filter[course_id]=${id}`
+            )
+              .then((response) => response.json())
+              .then((data) => {
+                lessons.value = data.data?.records;
+                pagination.value = data.data?.pagination;
+              })
+              .finally(() => {
+                loading.value = false;
+              });
+          };
+
+          Vue.onMounted(() => {
+            loadNewLesson(props.course_id);
+          });
+
+          const newLesson = Vue.reactive({
+            title: "",
+            video_url: "",
+            video_thumb: "",
+            content: "",
+          });
+
+          const { required } = VuelidateValidators;
+          const rulesLesson = {
+            title: { required },
+            content: { required },
+            video_url: { required },
+            video_thumb: {},
+          };
+
+          const resetForm = () => {
+            newLesson.id = null;
+            newLesson.title = "";
+            newLesson.content = "";
+            newLesson.video_url = "";
+            newLesson.video_thumb = "";
+          };
+
+          const v$ = Vuelidate.useVuelidate(rulesLesson, newLesson);
+
+          const handleSubmit = (isFormValid) => {
+            submitted.value = true;
+
+            if (!isFormValid) {
+              return;
+            }
+            fetch("https://api.chungkhoanso1.com/table?table=lessons", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                id: newLesson.id,
+                course_id: props.course_id,
+                title: newLesson.title,
+                content: newLesson.content,
+                video_url: newLesson.video_url,
+                video_thumb: newLesson.description,
+              }),
+            })
+              .then((response) => response.json())
+              .then((data) => {
+                resetForm();
+                displayAddModal.value = false;
+                loadNewLesson(props.course_id);
+              })
+              .catch((error) => {
+                console.error("Error:", error);
+              });
+          };
+
+          const handleCloseModal = () => {
+            resetForm();
+            displayAddModal.value = false;
+          };
+          const handleEdit = (data) => {
+            newLesson.id = data.id;
+            newLesson.title = data.title;
+            newLesson.content = data.content;
+            newLesson.video_url = data.video_url;
+            newLesson.video_thumb = data.description;
+
+            displayAddModal.value = true;
+          };
+          const { useConfirm } = primevue.useconfirm;
+          const confirm = useConfirm();
+
+          const handleRemove = (id) => {
+            fetch(`https://api.chungkhoanso1.com/table/${id}?table=lessons`, {
+              method: "DELETE",
+              headers: {
+                "Content-Type": "application/json",
+              },
+            }).finally(() => {
+              loadNewLesson(props.course_id);
+            });
+          };
+
+          const confirmRemove = (event, id) => {
+            confirm.require({
+              target: event.currentTarget,
+              message: "Bạn có muốn xoá bài học không này?",
+              icon: "pi pi-exclamation-triangle",
+              accept: () => {
+                handleRemove(id);
+              },
+              reject: () => {},
+            });
+          };
+          return {
+            handleEdit,
+            confirmRemove,
+            openModal,
+            displayAddModal,
+            handleCloseModal,
+            handleSubmit,
+            submitted,
+            lessons,
+            loading,
+            v$,
+          };
+        },
+        template: /*html*/ `<div class="flex flex-column">
+          <div class="flex justify-content-between align-items-center">
+            <div class="text-xl" >Danh sách bài học</div>
+            <p-button icon="pi pi-plus" label="Thêm bài học" class="p-button-success"  @click="openModal" ></p-button>
+          </div>
+          <p-confirmpopup></p-confirmpopup>
+          <p-datatable  class="mt-3" :value="lessons" :loading="loading" responsive-layout="scroll">
+            <template #empty>
+                    Không có bài học!
+                </template>
+              <p-column field="id" header="ID"></p-column>
+              <p-column  style="max-width:80px" field="video_thumb" header="Ảnh đại diện">
+                <template  #body="{data}">
+                  <img v-if="data.video_thumb" style="width:100px" :src="data.video_thumb" />
+                  <img v-else style="width:100px" src="https://dummyimage.com/16:9x64/" />
+                </template>
+              </p-column>
+              <p-column style="max-width:100px; word-break: break-word;" field="title" header="Tiêu đề"></p-column>
+              <p-column style="max-width:80px; word-break: break-word;"  field="video_url" header="URL">
+                <template  #body="{data}">
+                  <a target="_blank" v-if='data.video_url' :href="data.video_url">Video Link</a>
+                </template>
+              </p-column>
+              <p-column style="max-width:30vw" field="content" header="Nội dung">
+                <template  #body="{data}">
+                <div v-html="data.content"></div>
+                </template>
+              </p-column>
+              <p-column  style="max-width:80px" >
+                <template #body="{data}">
+                  <div class='flex gap-2'>
+                    <p-button @click="handleEdit(data)" type="button" class="p-button-warning" icon="pi pi-pencil"></p-button>
+                    <p-button @click="confirmRemove($event, data.id)" type="button" class="p-button-danger" icon="pi pi-trash"></p-button>
+                  </div>
+                </template>
+              </p-column>
+          </p-datatable>
+
+
+
+
+          <p-dialog :closable="false"  v-model:visible="displayAddModal" :breakpoints="{'960px': '75vw', '640px': '90vw'}" :style="{width: '50vw'}" :modal="true">
+            <template #header>
+              <div class="flex w-full justify-content-between align-items-center">
+                <h3>Thêm khoá học mới</h3>
+                <p-button @click="handleCloseModal" icon="pi pi-times" class="p-button-rounded p-button-danger" />
+              </div>
+           </template>
+            <form class="flex flex-column gap-3 p-4">
+                <div class="field">
+                  <div class="p-float-label">
+                    <p-inputtext
+                      id="title"
+                      v-model="v$.title.$model"
+                      :class="{'p-invalid':v$.title.$invalid && submitted,'w-full': true}"
+                    />
+                    <label for="title" :class="{'p-error':v$.title.$invalid && submitted}"
+                      >Tên bài học*</label
+                    >
+                  </div>
+                  <small
+                    v-if="(v$.title.$invalid && submitted) || v$.title.$pending.$response"
+                    class="p-error"
+                    >{{v$.title.required.$message.replace('Value', 'Title')}}</small
+                  >
+                </div>
+                <div class="field">
+                  <div class="p-float-label">
+                    <p-editor
+                      placeholder="Nội dung bài học*"
+                      id="content"
+                      v-model="v$.content.$model"
+                      :class="{'p-invalid':v$.content.$invalid && submitted}"
+                      editor-style="height: 220px"
+                    ></p-editor>
+                  </div>
+                  <small
+                    v-if="(v$.content.$invalid && submitted) || v$.content.$pending.$response"
+                    class="p-error"
+                    >{{v$.content.required.$message.replace('Value', 'Content')}}</small
+                  >
+                </div>
+                <div class="field">
+                  <div class="p-float-label">
+                    <p-inputtext
+                      id="video_url"
+                      v-model="v$.video_url.$model"
+                      :class="{'p-invalid':v$.video_url.$invalid && submitted,'w-full': true}"
+                    />
+                    <label for="video_url" :class="{'p-error':v$.video_url.$invalid && submitted}"
+                      >Video khoá học*</label
+                    >
+                  </div>
+                  <small
+                    v-if="(v$.video_url.$invalid && submitted) || v$.video_url.$pending.$response"
+                    class="p-error"
+                    >{{v$.video_url.required.$message.replace('Value', 'Video URL')}}</small
+                  >
+                </div>
+
+                <div class="field">
+                  <div class="p-float-label">
+                    <p-inputtext
+                      id="video_thumb"
+                      v-model="v$.video_thumb.$model"
+                      :class="{'p-invalid':v$.video_thumb.$invalid && submitted,'w-full': true}"
+                    />
+                    <label for="video_thumb" :class="{'p-error':v$.video_thumb.$invalid && submitted}"
+                      >Ảnh đại diện</label
+                    >
+                  </div>
+                  <small
+                    v-if="(v$.video_thumb.$invalid && submitted) || v$.video_thumb.$pending.$response"
+                    class="p-error"
+                    >{{v$.video_thumb.required.$message.replace('Value', 'Video thumbnail')}}</small
+                  >
+                </div>
+
+             </form>
+              <template #footer>
+                  <p-button label="Huỷ" icon="pi pi-times" @click="handleCloseModal" class="p-button-text"></p-button>
+                  <p-button label="Lưu" icon="pi pi-save" @click="handleSubmit(!v$.$invalid)" autofocus></p-button>
+              </template>
+            </p-dialog>
+          </div>`,
+      };
+
+      const CoursesPage = {
+        components: {
+          "p-datatable": primevue.datatable,
+          "p-column": primevue.column,
+          "p-button": primevue.button,
+          "p-inputtext": primevue.inputtext,
+          "p-confirmpopup": primevue.confirmpopup,
+          "p-dialog": primevue.dialog,
+          "p-editor": primevue.editor,
+          "p-inputnumber": primevue.inputnumber,
+          "p-dropdown": primevue.dropdown,
+          "lessons-table": lessonsTable,
+        },
+        setup() {
+          const courses = Vue.ref([]);
+          const pagination = Vue.ref([]);
+          const loading = Vue.ref(false);
+
+          const loadNewCourses = () => {
+            loading.value = true;
+            fetch("https://api.chungkhoanso1.com/table?table=courses&limit=100")
+              .then((response) => response.json())
+              .then((data) => {
+                courses.value = data.data?.records;
+                pagination.value = data.data?.pagination;
+              })
+              .finally(() => {
+                loading.value = false;
+              });
+          };
+
+          Vue.onMounted(() => {
+            loadNewCourses();
+          });
+
+          const { useConfirm } = primevue.useconfirm;
+          const confirm = useConfirm();
+
+          const confirmRemove = (event, id) => {
+            confirm.require({
+              target: event.currentTarget,
+              message: "Bạn có muốn xoá khoá học không này?",
+              icon: "pi pi-exclamation-triangle",
+              accept: () => {
+                handleRemove(id);
+              },
+              reject: () => {},
+            });
+          };
+
+          const displayAddModal = Vue.ref(false);
+          const closeModal = () => {
+            displayAddModal.value = false;
+          };
+          const openModal = () => {
+            displayAddModal.value = true;
+          };
+
+          const submitted = Vue.ref(false);
+
+          const newCourse = Vue.reactive({
+            thumbnail: "",
+            name: "",
+            thumbnail: "",
+            description: "",
+            difficulty: null,
+            duration: null,
+            num_lessons: null,
+            rating: 1,
+            students: 10,
+            completed_students: 10,
+          });
+          const { required } = VuelidateValidators;
+          const rulesCourse = {
+            name: { required },
+            description: { required },
+            thumbnail: {},
+            difficulty: {},
+            duration: {},
+            num_lessons: {},
+            rating: {},
+            students: {},
+            completed_students: {},
+          };
+
+          const resetForm = () => {
+            newCourse.name = "";
+            newCourse.thumbnail = "";
+            newCourse.description = "";
+            newCourse.difficulty = "1";
+            newCourse.duration = 1;
+            newCourse.num_lessons = 1;
+            newCourse.rating = 1;
+            newCourse.students = 10;
+            newCourse.completed_students = 10;
+          };
+
+          const v$ = Vuelidate.useVuelidate(rulesCourse, newCourse);
+
+          const handleSubmit = (isFormValid) => {
+            submitted.value = true;
+
+            if (!isFormValid) {
+              return;
+            }
+            fetch("https://api.chungkhoanso1.com/table?table=courses", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                id: newCourse.id,
+                name: newCourse.name,
+                thumbnail: newCourse.thumbnail,
+                description: newCourse.description,
+                difficulty: newCourse.difficulty,
+                duration: newCourse.duration,
+                num_lessons: newCourse.num_lessons,
+                rating: newCourse.rating,
+                students: newCourse.students,
+                completed_students: newCourse.completed_students,
+              }),
+            })
+              .then((response) => response.json())
+              .then((data) => {
+                resetForm();
+                displayAddModal.value = false;
+                loadNewCourses();
+              })
+              .catch((error) => {
+                console.error("Error:", error);
+              });
+          };
+
+          const handleEdit = (data) => {
+            newCourse.id = data.id;
+            newCourse.name = data.name;
+            newCourse.thumbnail = data.thumbnail;
+            newCourse.description = data.description;
+            newCourse.difficulty = data.difficulty;
+            newCourse.duration = data.duration;
+            newCourse.num_lessons = data.num_lessons;
+            newCourse.rating = data.rating;
+            newCourse.students = data.students;
+            newCourse.completed_students = data.completed_students;
+
+            displayAddModal.value = true;
+          };
+
+          const handleCloseModal = () => {
+            resetForm();
+            displayAddModal.value = false;
+          };
+
+          const handleRemove = (id) => {
+            fetch(`https://api.chungkhoanso1.com/table/${id}?table=courses`, {
+              method: "DELETE",
+              headers: {
+                "Content-Type": "application/json",
+              },
+            }).finally(() => {
+              loadNewCourses();
+            });
+          };
+
+          const ratings = Vue.ref([
+            {
+              name: "⭐ (1)",
+              code: 1,
+            },
+            {
+              name: "⭐⭐ (2)",
+              code: 2,
+            },
+            {
+              name: "⭐⭐⭐ (3)",
+              code: 3,
+            },
+            {
+              name: "⭐⭐⭐⭐ (4)",
+              code: 4,
+            },
+            {
+              name: "⭐⭐⭐⭐⭐ (5)",
+              code: 5,
+            },
+          ]);
+
+          const difficultis = Vue.ref([
+            {
+              name: "Dễ",
+              code: "1",
+            },
+            {
+              name: "Trung Bình",
+              code: "2",
+            },
+            {
+              name: "Khó",
+              code: "3",
+            },
+          ]);
+
+          const onRowExpand = (event) => {
+            console.log("onRowExpand", event);
+          };
+
+          const onRowCollapse = (event) => {
+            console.log("onRowCollapse", event);
+          };
+
+          const expandedRows = Vue.ref([]);
+
+          return {
+            courses,
+            loading,
+            expandedRows,
+            confirmRemove,
+            displayAddModal,
+            closeModal,
+            openModal,
+            submitted,
+            v$,
+            handleSubmit,
+            handleEdit,
+            handleCloseModal,
+            ratings,
+            difficultis,
+            onRowExpand,
+          };
+        },
+        template: /*html*/ `
+          <div class='flex justify-content-between align-items-center text-xl mt-4'>
+            <div>Quản Lý Khoá Học</div>
+            <p-button icon="pi pi-plus" label="Thêm khoá học" @click="openModal" ></p-button>
+          </div>
+          <p-dialog :closable="false"  v-model:visible="displayAddModal" :breakpoints="{'960px': '75vw', '640px': '90vw'}" :style="{width: '50vw'}" :modal="true">
+            <template #header>
+              <div class="flex w-full justify-content-between align-items-center">
+                <h3>Thêm khoá học mới</h3>
+                <p-button @click="handleCloseModal" icon="pi pi-times" class="p-button-rounded p-button-danger" />
+              </div>
+           </template>
+            <form class="flex flex-column gap-3 p-4">
+        <div class="field w-full">
+          <div class="p-float-label w-full">
+            <p-inputtext
+              id="name"
+              v-model="v$.name.$model"
+              :class="{'p-invalid':v$.name.$invalid && submitted,'w-full': true}"
+            />
+            <label for="name" :class="{'p-error':v$.name.$invalid && submitted}"
+              >Tên khoá học*</label
+            >
+          </div>
+          <small
+            v-if="(v$.name.$invalid && submitted) || v$.name.$pending.$response"
+            class="p-error"
+            >{{v$.name.required.$message.replace('Value', 'Name')}}</small
+          >
+        </div>
+        <div class="field w-full">
+          <div class="p-float-label w-full">
+            <p-inputtext
+              id="thumbnail"
+              v-model="v$.thumbnail.$model"
+              :class="{'p-invalid':v$.thumbnail.$invalid && submitted,'w-full': true}"
+            />
+            <label for="thumbnail" :class="{'p-error':v$.thumbnail.$invalid && submitted}"
+              >Hình ảnh</label
+            >
+          </div>
+          <small
+            v-if="(v$.thumbnail.$invalid && submitted) || v$.thumbnail.$pending.$response"
+            class="p-error"
+            >{{v$.thumbnail.required.$message.replace('Value', 'Name')}}</small
+          >
+        </div>
+        <div class="field">
+          <div class="p-float-label">
+            <p-editor
+              placeholder="Mô tả khoá học"
+              id="description"
+              v-model="v$.description.$model"
+              :class="{'p-invalid':v$.description.$invalid && submitted}"
+              editor-style="height: 220px"
+            ></p-editor>
+          </div>
+          <small
+            v-if="(v$.description.$invalid && submitted) || v$.description.$pending.$response"
+            class="p-error"
+            >{{v$.description.required.$message.replace('Value', 'Description')}}</small
+          >
+        </div>
+
+        <div class="flex gap-2 w-full">
+          <div class="field flex-grow-1">
+            <div class="p-float-label">
+              <p-dropdown
+                id="difficulty"
+                v-model="v$.difficulty.$model"
+                :options="difficultis" option-label="name" option-value="code"
+                :class="{'p-invalid':v$.difficulty.$invalid && submitted,'w-full': true}"
+              />
+              <label
+                for="difficulty"
+                :class="{'p-error':v$.difficulty.$invalid && submitted}"
+                >Độ khó</label
+              >
+            </div>
+            <small
+              v-if="(v$.difficulty.$invalid && submitted) || v$.difficulty.$pending.$response"
+              class="p-error"
+              >{{v$.difficulty.required.$message.replace('Value', 'Name')}}</small
+            >
+          </div>
+          <div class="field flex-grow-1">
+            <div class="p-float-label">
+              <p-inputtext
+                id="duration"
+                v-model="v$.duration.$model"
+                :class="{'p-invalid':v$.duration.$invalid && submitted,'w-full': true}"
+              />
+              <label
+                for="duration"
+                :class="{'p-error':v$.duration.$invalid && submitted}"
+                >Thời lượng (giờ)</label
+              >
+            </div>
+            <small
+              v-if="(v$.duration.$invalid && submitted) || v$.duration.$pending.$response"
+              class="p-error"
+              >{{v$.duration.required.$message.replace('Value', 'Name')}}</small
+            >
+          </div>
+          <div class="field flex-grow-1">
+            <div class="p-float-label">
+              <p-inputtext
+                id="num_lessons"
+                v-model="v$.num_lessons.$model"
+                :class="{'p-invalid':v$.num_lessons.$invalid && submitted,'w-full': true}"
+              />
+              <label
+                for="num_lessons"
+                :class="{'p-error':v$.num_lessons.$invalid && submitted}"
+                >Bài học</label
+              >
+            </div>
+            <small
+              v-if="(v$.num_lessons.$invalid && submitted) || v$.num_lessons.$pending.$response"
+              class="p-error"
+              >{{v$.num_lessons.required.$message.replace('Value',
+              'Name')}}</small
+            >
+          </div>
+
+        </div>
+        <div class="flex gap-2 w-full">
+            <div class="field flex-grow-1">
+              <div class="p-float-label">
+                <p-dropdown
+                  id="rating"
+                  v-model="v$.rating.$model"
+                  :options="ratings" option-label="name" option-value="code"
+                  :class="{'p-invalid':v$.rating.$invalid && submitted,'w-full': true}"
+                />
+                <label
+                  for="rating"
+                  :class="{'p-error':v$.rating.$invalid && submitted}"
+                  >Đánh giá</label
+                >
+              </div>
+              <small
+                v-if="(v$.rating.$invalid && submitted) || v$.rating.$pending.$response"
+                class="p-error"
+                >{{v$.rating.required.$message.replace('Value', 'Name')}}</small
+              >
+            </div>
+            <div class="field flex-grow-1">
+              <div class="p-float-label">
+                <p-inputnumber
+                  id="students"
+                  v-model="v$.students.$model"
+                  :class="{'p-invalid':v$.students.$invalid && submitted,'w-full': true}"
+                />
+                <label
+                  for="students"
+                  :class="{'p-error':v$.students.$invalid && submitted}"
+                  >Học viên</label
+                >
+              </div>
+              <small
+                v-if="(v$.students.$invalid && submitted) || v$.students.$pending.$response"
+                class="p-error"
+                >{{v$.students.required.$message.replace('Value', 'Name')}}</small
+              >
+            </div>
+            <div class="field flex-grow-1">
+              <div class="p-float-label">
+                <p-inputnumber
+                  id="completed_students"
+                  v-model="v$.completed_students.$model"
+                  :class="{'p-invalid':v$.completed_students.$invalid && submitted,'w-full': true}"
+                />
+                <label
+                  for="completed_students"
+                  :class="{'p-error':v$.completed_students.$invalid && submitted}"
+                  >HV hoàn thành</label
+                >
+              </div>
+              <small
+                v-if="(v$.completed_students.$invalid && submitted) || v$.completed_students.$pending.$response"
+                class="p-error"
+                >{{v$.completed_students.required.$message.replace('Value','Name')}}</small
+              >
+            </div>
+          </div>
+      </form>
+
+              <template #footer>
+                  <p-button label="Huỷ" icon="pi pi-times" @click="handleCloseModal" class="p-button-text"></p-button>
+                  <p-button label="Lưu" icon="pi pi-save" @click="handleSubmit(!v$.$invalid)" autofocus></p-button>
+              </template>
+            </p-dialog>
+
+          <p-confirmpopup></p-confirmpopup>
+          <p-datatable v-model:expanded-rows="expandedRows" @row-collapse="onRowCollapse" dataKey="id" @row-expand="onRowExpand" :loading="loading" class='border-300 border-1 border-round-md mt-4' :value="courses" responsive-layout="scroll">
+            <template #empty>
+                    Không có khoá học!
+                </template>
+                      <p-column field="id" header="ID"></p-column>
+                      <p-column :expander="true" headerStyle="width: 3rem"></p-column>
+                      <template #expansion="slotProps">
+                      <div class="pl-5">
+                          <lessons-table :course_id='slotProps.data.id' ></lessons-table>
+                      </div>
+                  </template>
+                      <p-column  style="max-width:150px" field="thumbnail" header="Ảnh">
+                        <template  #body="{data}">
+                         <img v-if="data.thumbnail" style="width:100px" :src="data.thumbnail" />
+                         <img v-else style="width:100px" src="https://dummyimage.com/16:9x64/" />
+                        </template>
+                      </p-column>
+                      <p-column style="max-width:20vw"  field="name" header="Tên"></p-column>
+                      <p-column style="max-width:30vw" field="description" header="Mô tả">
+                        <template  #body="{data}">
+                        <div v-html="data.description"></div>
+                        </template>
+                      </p-column>
+                      <p-column  class='text-center'  style="max-width:80px" field="difficulty" header="Độ khó"></p-column>
+                      <p-column class='text-center' style="max-width:150px" field="duration" header="Thời lượng (giờ)"></p-column>
+                      <p-column  class='text-center' style="max-width:80px" field="num_lessons" header="Bài học"></p-column>
+                      <p-column  class='text-center' style="max-width:80px" field="rating" header="Đánh giá"></p-column>
+                      <p-column  class='text-center' style="max-width:80px" field="students" header="Học viên"></p-column>
+                      <p-column  class='text-center' style="max-width:150px" field="completed_students" header="HV hoàn thành"></p-column>
+                      <p-column >
+                        <template #body="{data}">
+                          <div class='flex gap-2'>
+                            <p-button @click="handleEdit(data)" type="button" class="p-button-warning" icon="pi pi-pencil"></p-button>
+                            <p-button @click="confirmRemove($event, data.id)" type="button" class="p-button-danger" icon="pi pi-trash"></p-button>
+                          </div>
+                        </template>
+                      </p-column>
+                  </p-datatable>`,
+      };
+
+      const UsersPage = {
+        components: {
+          "p-datatable": primevue.datatable,
+          "p-column": primevue.column,
+        },
+        setup() {
+          return {
+            products,
+          };
+        },
+        template: `<p-datatable class='border-300 border-1 border-round-md mt-4' :value="products" responsive-layout="scroll">
+                      <p-column field="code" header="Code"></p-column>
+                      <p-column field="name" header="Name"></p-column>
+                      <p-column field="category" header="Category"></p-column>
+                      <p-column field="quantity" header="Quantity"></p-column>
+                  </p-datatable>`,
+      };
+
+      const routes = [
+        { path: "/courses", component: CoursesPage },
+        { path: "/users", component: UsersPage },
+      ];
+
+      const router = VueRouter.createRouter({
+        history: VueRouter.createWebHashHistory(),
+        routes,
+      });
+
+      Vue.createApp(App)
+        .use(router)
+        .use(primevue.confirmationservice)
+        .use(primevue.config.default)
+        .mount("#app");
+    </script>
+  </body>
+</html>

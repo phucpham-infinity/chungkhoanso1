@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <!-- PrimeVue -->
+    <link
+      href="https://unpkg.com/primevue@^3/resources/themes/saga-blue/theme.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://unpkg.com/primevue@^3/resources/primevue.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://unpkg.com/primeflex@^3/primeflex.min.css"
+      rel="stylesheet"
+    />
+    <link href="https://unpkg.com/primeicons/primeicons.css" rel="stylesheet" />
+
+    <!-- Dependencies -->
+    <script src="https://unpkg.com/vue@next"></script>
+    <script src="https://unpkg.com/primevue@^3/core/core.min.js"></script>
+  </head>
+  <body>
+    <div id="app">
+      <div class="grid">
+        <div
+          class="col-4 align-items-center justify-content-center flex flex-column"
+          v-for="course in courses"
+        >
+          <img style="width: 100%" :src="course.thumbnail" />
+          <div
+            class="text-center mt-3"
+            style="
+              max-width: 80%;
+              height: 55px;
+              font-weight: 700;
+              font-size: 24px;
+              overflow: hidden;
+              line-height: 26px;
+            "
+          >
+            [[course.name]]
+          </div>
+          <div class="my-2 mb-3 flex gap-2">
+            <span v-for="item in [...Array(course.rating).keys()]">
+              <img
+                src="https://chungkhoanso1.com/wp-content/uploads/2023/03/🔹Icon-Color.png"
+              />
+            </span>
+          </div>
+          <div
+            style="font-size: 14px; font-weight: 500"
+            class="flex gap-2 py-2"
+          >
+            <div>[[course.num_lessons]] Bài học</div>
+            <div>|</div>
+            <div>[[course.students]] Lượt đăng kí</div>
+          </div>
+          <div
+            class="mb-2"
+            style="
+              max-width: 80%;
+              max-height: 70px;
+              overflow: hidden;
+              font-size: 16px;
+              font-weight: 400;
+            "
+          >
+            <div class="text-justify" v-html="course.description"></div>
+          </div>
+          <div
+            style="height: 5px; width: 90%"
+            class="border-300 border-bottom-1 mb-2"
+          ></div>
+        </div>
+      </div>
+    </div>
+    <script type="module">
+      const App = {
+        delimiters: ["[[", "]]"],
+        setup() {
+          const courses = Vue.ref([]);
+          const loading = Vue.ref(false);
+          Vue.onMounted(() => {
+            loading.value = true;
+            fetch(`https://api.chungkhoanso1.com/table?table=courses&limit=10`)
+              .then((response) => response.json())
+              .then((data) => {
+                courses.value = data.data?.records;
+              })
+              .finally(() => {
+                loading.value = false;
+              });
+          });
+          return { courses };
+        },
+        components: {
+          "p-button": primevue.button,
+        },
+      };
+
+      Vue.createApp(App)
+        .use(primevue.config.default, { ripple: true })
+        .mount("#app");
+    </script>
+  </body>
+</html>

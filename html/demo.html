@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+
+  <body>
+    <form class="flex flex-column gap-2 p-4">
+      <div class="field w-full">
+        <div class="p-float-label w-full">
+          <p-inputtext
+            id="name"
+            v-model="v$.name.$model"
+            :class="{'p-invalid':v$.name.$invalid && submitted,'w-full': true}"
+          />
+          <label for="name" :class="{'p-error':v$.name.$invalid && submitted}"
+            >Tên khoá học*</label
+          >
+        </div>
+        <small
+          v-if="(v$.name.$invalid && submitted) || v$.name.$pending.$response"
+          class="p-error"
+          >{{v$.name.required.$message.replace('Value', 'Name')}}</small
+        >
+      </div>
+      <div class="field">
+        <div class="p-float-label">
+          <p-editor
+            placeholder="Mô tả khoá học"
+            id="description"
+            v-model="v$.description.$model"
+            :class="{'p-invalid':v$.description.$invalid && submitted}"
+            editor-style="height: 120px"
+          ></p-editor>
+        </div>
+        <small
+          v-if="(v$.description.$invalid && submitted) || v$.description.$pending.$response"
+          class="p-error"
+          >{{v$.description.required.$message.replace('Value', 'Name')}}</small
+        >
+      </div>
+
+      <div class="flex gap-2 w-full">
+        <div class="field">
+          <div class="p-float-label">
+            <p-inputtext
+              id="difficulty"
+              v-model="v$.difficulty.$model"
+              :class="{'p-invalid':v$.difficulty.$invalid && submitted,'w-full': true}"
+            />
+            <label
+              for="difficulty"
+              :class="{'p-error':v$.difficulty.$invalid && submitted}"
+              >Độ khó</label
+            >
+          </div>
+          <small
+            v-if="(v$.difficulty.$invalid && submitted) || v$.difficulty.$pending.$response"
+            class="p-error"
+            >{{v$.difficulty.required.$message.replace('Value', 'Name')}}</small
+          >
+        </div>
+        <div class="field">
+          <div class="p-float-label">
+            <p-inputtext
+              id="duration"
+              v-model="v$.duration.$model"
+              :class="{'p-invalid':v$.duration.$invalid && submitted,'w-full': true}"
+            />
+            <label
+              for="duration"
+              :class="{'p-error':v$.duration.$invalid && submitted}"
+              >Thời lượng (giờ)</label
+            >
+          </div>
+          <small
+            v-if="(v$.duration.$invalid && submitted) || v$.duration.$pending.$response"
+            class="p-error"
+            >{{v$.duration.required.$message.replace('Value', 'Name')}}</small
+          >
+        </div>
+        <div class="field">
+          <div class="p-float-label">
+            <p-inputtext
+              id="num_lessons"
+              v-model="v$.num_lessons.$model"
+              :class="{'p-invalid':v$.num_lessons.$invalid && submitted,'w-full': true}"
+            />
+            <label
+              for="num_lessons"
+              :class="{'p-error':v$.num_lessons.$invalid && submitted}"
+              >Bài học</label
+            >
+          </div>
+          <small
+            v-if="(v$.num_lessons.$invalid && submitted) || v$.num_lessons.$pending.$response"
+            class="p-error"
+            >{{v$.num_lessons.required.$message.replace('Value',
+            'Name')}}</small
+          >
+        </div>
+        <div class="flex gap-2 w-full">
+          <div class="field">
+            <div class="p-float-label">
+              <p-inputtext
+                id="rating"
+                v-model="v$.rating.$model"
+                :class="{'p-invalid':v$.rating.$invalid && submitted,'w-full': true}"
+              />
+              <label
+                for="rating"
+                :class="{'p-error':v$.rating.$invalid && submitted}"
+                >Đánh giá</label
+              >
+            </div>
+            <small
+              v-if="(v$.rating.$invalid && submitted) || v$.rating.$pending.$response"
+              class="p-error"
+              >{{v$.rating.required.$message.replace('Value', 'Name')}}</small
+            >
+          </div>
+          <div class="field">
+            <div class="p-float-label">
+              <p-inputtext
+                id="students"
+                v-model="v$.students.$model"
+                :class="{'p-invalid':v$.students.$invalid && submitted,'w-full': true}"
+              />
+              <label
+                for="students"
+                :class="{'p-error':v$.students.$invalid && submitted}"
+                >Học viên</label
+              >
+            </div>
+            <small
+              v-if="(v$.students.$invalid && submitted) || v$.students.$pending.$response"
+              class="p-error"
+              >{{v$.students.required.$message.replace('Value', 'Name')}}</small
+            >
+          </div>
+          <div class="field">
+            <div class="p-float-label">
+              <p-inputtext
+                id="completed_students"
+                v-model="v$.completed_students.$model"
+                :class="{'p-invalid':v$.completed_students.$invalid && submitted,'w-full': true}"
+              />
+              <label
+                for="completed_students"
+                :class="{'p-error':v$.completed_students.$invalid && submitted}"
+                >HV hoàn thành</label
+              >
+            </div>
+            <small
+              v-if="(v$.completed_students.$invalid && submitted) || v$.completed_students.$pending.$response"
+              class="p-error"
+              >{{v$.completed_students.required.$message.replace('Value',
+              'Name')}}</small
+            >
+          </div>
+        </div>
+      </div>
+    </form>
+  </body>
+</html>
